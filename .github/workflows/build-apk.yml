@@ -1,0 +1,41 @@
+name: Build MYTUBE APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'MYTUBE_Android_1_5.zip'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extrair projeto
+        run: |
+          mkdir -p project
+          unzip -o MYTUBE_Android_1_5.zip -d project
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compilar APK
+        run: |
+          cd project
+          gradle assembleDebug
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MYTUBE-APK
+          path: project/**/build/outputs/apk/debug/*.apk
