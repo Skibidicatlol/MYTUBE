@@ -1,11 +1,10 @@
-
 name: Build MYTUBE APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'MYTUBE_Android_1_5.zip'
+      - 'MYTUBE_Android_1_6_etapa2.zip'
       - '.github/workflows/build-apk.yml'
 
 jobs:
@@ -25,7 +24,7 @@ jobs:
       - name: Extrair projeto
         run: |
           mkdir -p project
-          unzip -o MYTUBE_Android_1_5.zip -d project
+          unzip -o MYTUBE_Android_1_6_etapa2.zip -d project
 
       - name: Localizar projeto Android
         run: |
