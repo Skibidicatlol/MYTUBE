@@ -1,3 +1,4 @@
+
 name: Build MYTUBE APK
 
 on:
@@ -21,35 +22,61 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Verificar arquivo do projeto
+        run: |
+          if [ ! -f MYTUBE_Android_2_1.zip ]; then
+            echo "ERRO: MYTUBE_Android_2_1.zip não encontrado."
+            echo "Arquivos disponíveis:"
+            ls -la
+            exit 1
+          fi
+
       - name: Extrair projeto
         run: |
           mkdir -p project
-          unzip -o MYTUBE_Android_1_6_etapa2.zip -d project
+          unzip -o MYTUBE_Android_2_1.zip -d project
 
       - name: Localizar projeto Android
         run: |
-          SETTINGS=$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
+          SETTINGS=$(find project -type f \( \
+            -name settings.gradle -o \
+            -name settings.gradle.kts \
+          \) -print -quit)
 
           if [ -z "$SETTINGS" ]; then
             echo "ERRO: Não foi encontrado settings.gradle."
             echo "Conteúdo extraído:"
-            find project -maxdepth 4 -type f
+            find project -maxdepth 5 -type f
             exit 1
           fi
 
           PROJECT_DIR=$(dirname "$SETTINGS")
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Projeto encontrado em: $PROJECT_DIR"
 
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Compilar APK
-        run: gradle -p "$PROJECT_DIR" assembleDebug
+        run: |
+          gradle -p "$PROJECT_DIR" assembleDebug
+
+      - name: Verificar APK
+        run: |
+          APK=$(find "$PROJECT_DIR" -type f \
+            -path '*/build/outputs/apk/debug/*.apk' \
+            -print -quit)
+
+          if [ -z "$APK" ]; then
+            echo "ERRO: Nenhum APK foi gerado."
+            exit 1
+          fi
+
+          echo "APK gerado: $APK"
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
-          name: MYTUBE-APK
-          path: project/**/build/outputs/apk/debug/*.apk
+          name: MYTUBE-2.1-APK
+          path: ${{ env.PROJECT_DIR }}/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
