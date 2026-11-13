@@ -1,12 +1,15 @@
-
 name: Build MYTUBE APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'MYTUBE_Android_2_2.zip'
+      - 'MYTUBE_Android_*.zip'
       - '.github/workflows/build-apk.yml'
+
+env:
+  ZIP_NAME: MYTUBE_Android_2_3.zip
+  APP_VERSION: "2.3"
 
 jobs:
   build:
@@ -24,8 +27,8 @@ jobs:
 
       - name: Verificar arquivo do projeto
         run: |
-          if [ ! -f MYTUBE_Android_2_2.zip ]; then
-            echo "ERRO: MYTUBE_Android_2_2.zip não encontrado."
+          if [ ! -f "$ZIP_NAME" ]; then
+            echo "ERRO: $ZIP_NAME não encontrado."
             ls -la
             exit 1
           fi
@@ -33,7 +36,7 @@ jobs:
       - name: Extrair projeto
         run: |
           mkdir -p project
-          unzip -o MYTUBE_Android_2_2.zip -d project
+          unzip -o "$ZIP_NAME" -d project
 
       - name: Localizar projeto Android
         run: |
@@ -50,7 +53,6 @@ jobs:
 
           PROJECT_DIR=$(dirname "$SETTINGS")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-
           echo "Projeto encontrado: $PROJECT_DIR"
 
       - name: Preparar Gradle
@@ -75,6 +77,6 @@ jobs:
       - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
-          name: MYTUBE-2.2-APK
+          name: MYTUBE-${{ env.APP_VERSION }}-APK
           path: ${{ env.PROJECT_DIR }}/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
