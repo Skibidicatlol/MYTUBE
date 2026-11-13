@@ -1,3 +1,4 @@
+
 name: Build MYTUBE APK
 
 on:
@@ -8,8 +9,8 @@ on:
       - '.github/workflows/build-apk.yml'
 
 env:
-  ZIP_NAME: MYTUBE_Android_2_3.zip
-  APP_VERSION: "2.3"
+  ZIP_NAME: MYTUBE_Android_2_4.zip
+  APP_VERSION: "2.4"
 
 jobs:
   build:
@@ -55,11 +56,28 @@ jobs:
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Projeto encontrado: $PROJECT_DIR"
 
+      - name: Preparar chave de assinatura
+        run: |
+          KEYSTORE=$(find project -type f \
+            -name "mytube-debug.keystore" -print -quit)
+
+          if [ -z "$KEYSTORE" ]; then
+            echo "ERRO: Chave mytube-debug.keystore não encontrada."
+            echo "Não será gerada outra chave automaticamente."
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.android"
+          cp "$KEYSTORE" "$HOME/.android/debug.keystore"
+
+          echo "Chave persistente localizada e preparada."
+
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Compilar APK
-        run: gradle -p "$PROJECT_DIR" assembleDebug
+        run: |
+          gradle -p "$PROJECT_DIR" assembleDebug
 
       - name: Verificar APK
         run: |
@@ -73,6 +91,13 @@ jobs:
           fi
 
           echo "APK encontrado: $APK"
+
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" \
+            -name apksigner -type f | sort -V | tail -n 1)
+
+          if [ -n "$APKSIGNER" ]; then
+            "$APKSIGNER" verify --print-certs "$APK"
+          fi
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4
